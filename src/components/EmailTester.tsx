@@ -58,8 +58,16 @@ export const EmailTester = () => {
       });
 
       console.log('Email test response status:', response.status);
-      const data = await response.json();
-      console.log('Email test response:', data);
+      
+      const text = await response.text();
+      let data;
+      
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse response as JSON:', text);
+        throw new Error('Server returned an invalid response');
+      }
 
       if (data.success) {
         toast({

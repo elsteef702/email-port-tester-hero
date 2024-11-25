@@ -2,10 +2,17 @@ import { Handler } from '@netlify/functions';
 import nodemailer from 'nodemailer';
 
 export const handler: Handler = async (event) => {
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
   if (event.httpMethod !== 'POST') {
     console.log('Invalid HTTP method:', event.httpMethod);
     return {
       statusCode: 405,
+      headers,
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
@@ -36,12 +43,14 @@ export const handler: Handler = async (event) => {
 
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({ success: true }),
     };
   } catch (error) {
     console.error('Error sending email:', error);
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({ error: error.message }),
     };
   }
