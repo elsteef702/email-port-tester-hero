@@ -2,7 +2,6 @@ import { Handler } from '@netlify/functions';
 import net from 'net';
 
 export const handler: Handler = async (event) => {
-  // Add CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -37,11 +36,20 @@ export const handler: Handler = async (event) => {
   try {
     const success = await new Promise((resolve) => {
       const socket = new net.Socket();
+      let receivedData = false;
       
       socket.setTimeout(5000);
       
       socket.on('connect', () => {
         console.log(`Successfully connected to ${host}:${port}`);
+        receivedData = true;
+        socket.destroy();
+        resolve(true);
+      });
+      
+      socket.on('data', (data) => {
+        console.log(`Received data from ${host}:${port}:`, data.toString());
+        receivedData = true;
         socket.destroy();
         resolve(true);
       });
@@ -55,6 +63,12 @@ export const handler: Handler = async (event) => {
       socket.on('error', (err) => {
         console.log(`Connection error for ${host}:${port}:`, err.message);
         resolve(false);
+      });
+      
+      socket.on('close', () => {
+        if (!receivedData) {
+          resolve(false);
+        }
       });
       
       socket.connect(port, host);
