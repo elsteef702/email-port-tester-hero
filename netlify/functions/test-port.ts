@@ -2,15 +2,36 @@ import { Handler } from '@netlify/functions';
 import net from 'net';
 
 export const handler: Handler = async (event) => {
+  // Add CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Content-Type': 'application/json'
+  };
+
   if (event.httpMethod !== 'POST') {
     console.log('Invalid HTTP method:', event.httpMethod);
     return {
       statusCode: 405,
+      headers,
       body: JSON.stringify({ error: 'Method not allowed' }),
     };
   }
 
-  const { host, port } = JSON.parse(event.body || '{}');
+  let host, port;
+  try {
+    const body = JSON.parse(event.body || '{}');
+    host = body.host;
+    port = body.port;
+  } catch (error) {
+    console.error('Error parsing request body:', error);
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: 'Invalid request body' }),
+    };
+  }
+
   console.log(`Testing connection to ${host}:${port}`);
 
   try {
@@ -42,12 +63,14 @@ export const handler: Handler = async (event) => {
     console.log(`Test result for ${host}:${port}:`, success);
     return {
       statusCode: 200,
+      headers,
       body: JSON.stringify({ success }),
     };
   } catch (error) {
     console.error(`Unexpected error testing ${host}:${port}:`, error);
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({ error: error.message }),
     };
   }

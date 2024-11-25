@@ -32,6 +32,16 @@ export const PortTester = () => {
       });
       
       console.log(`Response status: ${response.status}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        throw new Error("Response was not JSON");
+      }
+      
       const data = await response.json();
       console.log(`Port ${port} test result:`, data);
       
