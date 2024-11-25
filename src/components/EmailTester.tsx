@@ -34,7 +34,7 @@ export const EmailTester = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/send-test-email', {
+      const response = await fetch('/.netlify/functions/send-test-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

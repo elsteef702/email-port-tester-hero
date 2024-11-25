@@ -22,7 +22,7 @@ export const PortTester = () => {
     setResults(prev => [...prev, { port, status: "testing" }]);
     
     try {
-      const response = await fetch(`/api/test-port`, {
+      const response = await fetch('/.netlify/functions/test-port', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
