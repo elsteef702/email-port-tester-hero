@@ -32,7 +32,7 @@ export const EmailTester = () => {
     }
 
     setIsLoading(true);
-    console.log('Attempting to send test email with config:', {
+    console.log('Starting email test with config:', {
       server,
       port,
       from,
@@ -56,16 +56,22 @@ export const EmailTester = () => {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Response was not JSON");
-      }
+      console.log('Content-Type:', contentType);
 
-      const data = await response.json();
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (error) {
+        console.error('Failed to parse response as JSON:', error);
+        throw new Error('Server response was not valid JSON');
+      }
 
       if (data.success) {
         toast({
