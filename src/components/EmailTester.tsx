@@ -41,12 +41,10 @@ export const EmailTester = () => {
     });
 
     try {
-      // Using absolute path to ensure we hit the Netlify function
       const response = await fetch('/.netlify/functions/send-test-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: JSON.stringify({
           server,
@@ -58,15 +56,16 @@ export const EmailTester = () => {
         }),
       });
 
-      console.log('Email test response status:', response.status);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('Response status:', response.status);
+      const responseText = await response.text();
+      console.log('Raw response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}...`);
       }
-      
-      const data = await response.json();
 
       if (data.success) {
         toast({
