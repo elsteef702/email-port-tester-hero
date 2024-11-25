@@ -32,6 +32,14 @@ export const EmailTester = () => {
     }
 
     setIsLoading(true);
+    console.log('Attempting to send test email with config:', {
+      server,
+      port,
+      from,
+      to,
+      username,
+      // password omitted for security
+    });
 
     try {
       const response = await fetch('/.netlify/functions/send-test-email', {
@@ -49,7 +57,9 @@ export const EmailTester = () => {
         }),
       });
 
+      console.log('Email test response status:', response.status);
       const data = await response.json();
+      console.log('Email test response:', data);
 
       if (data.success) {
         toast({
@@ -60,6 +70,7 @@ export const EmailTester = () => {
         throw new Error(data.error || 'Failed to send email');
       }
     } catch (error) {
+      console.error('Email test error:', error);
       toast({
         title: "Failed to send email",
         description: error instanceof Error ? error.message : "An error occurred while sending the test email",

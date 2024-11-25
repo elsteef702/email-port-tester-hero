@@ -22,6 +22,7 @@ export const PortTester = () => {
     setResults(prev => [...prev, { port, status: "testing" }]);
     
     try {
+      console.log(`Testing port ${port} for server ${server}`);
       const response = await fetch('/.netlify/functions/test-port', {
         method: 'POST',
         headers: {
@@ -30,7 +31,9 @@ export const PortTester = () => {
         body: JSON.stringify({ host: server, port }),
       });
       
+      console.log(`Response status: ${response.status}`);
       const data = await response.json();
+      console.log(`Port ${port} test result:`, data);
       
       setResults(prev => 
         prev.map(result => 
@@ -46,6 +49,7 @@ export const PortTester = () => {
         variant: data.success ? "default" : "destructive",
       });
     } catch (error) {
+      console.error(`Error testing port ${port}:`, error);
       setResults(prev => 
         prev.map(result => 
           result.port === port 
@@ -56,7 +60,7 @@ export const PortTester = () => {
 
       toast({
         title: "Error testing port",
-        description: "Failed to test port connectivity",
+        description: error instanceof Error ? error.message : "Failed to test port connectivity",
         variant: "destructive",
       });
     }
