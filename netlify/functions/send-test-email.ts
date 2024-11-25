@@ -23,7 +23,6 @@ export const handler: Handler = async (event) => {
   };
 
   if (event.httpMethod !== 'POST') {
-    console.log('Invalid HTTP method:', event.httpMethod);
     return {
       statusCode: 405,
       headers,
@@ -55,6 +54,9 @@ export const handler: Handler = async (event) => {
         user: username,
         pass: password,
       },
+      tls: {
+        rejectUnauthorized: false // Allow self-signed certificates
+      }
     });
 
     console.log('Transporter created, attempting to send email...');
