@@ -37,26 +37,29 @@ export const PortTester = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("Response was not JSON");
-      }
+      const text = await response.text();
+      let success = false;
       
-      const data = await response.json();
-      console.log(`Port ${port} test result:`, data);
+      try {
+        const data = JSON.parse(text);
+        success = data.success;
+      } catch (e) {
+        // If we can't parse JSON, check if we got any response at all
+        success = text.length > 0;
+      }
       
       setResults(prev => 
         prev.map(result => 
           result.port === port 
-            ? { ...result, status: data.success ? "success" : "error" }
+            ? { ...result, status: success ? "success" : "error" }
             : result
         )
       );
 
       toast({
-        title: data.success ? "Port is open" : "Port is closed",
-        description: `Port ${port} ${data.success ? "is" : "is not"} accessible`,
-        variant: data.success ? "default" : "destructive",
+        title: success ? "Port is open" : "Port is closed",
+        description: `Port ${port} ${success ? "is" : "is not"} accessible`,
+        variant: success ? "default" : "destructive",
       });
     } catch (error) {
       console.error(`Error testing port ${port}:`, error);
