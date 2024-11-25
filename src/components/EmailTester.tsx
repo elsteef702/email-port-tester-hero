@@ -46,6 +46,7 @@ export const EmailTester = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({
           server,
@@ -59,6 +60,10 @@ export const EmailTester = () => {
 
       console.log('Email test response status:', response.status);
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const text = await response.text();
       let data;
       
@@ -66,7 +71,7 @@ export const EmailTester = () => {
         data = JSON.parse(text);
       } catch (e) {
         console.error('Failed to parse response as JSON:', text);
-        throw new Error('Server returned an invalid response');
+        throw new Error('Server returned an invalid response format');
       }
 
       if (data.success) {

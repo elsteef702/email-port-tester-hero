@@ -2,6 +2,20 @@ import { Handler } from '@netlify/functions';
 import nodemailer from 'nodemailer';
 
 export const handler: Handler = async (event) => {
+  // Handle CORS preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Content-Type': 'application/json'
+      },
+      body: ''
+    };
+  }
+
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -17,13 +31,25 @@ export const handler: Handler = async (event) => {
     };
   }
 
-  const { server, port, from, to, username, password } = JSON.parse(event.body || '{}');
+  let requestBody;
+  try {
+    requestBody = JSON.parse(event.body || '{}');
+  } catch (error) {
+    console.error('Error parsing request body:', error);
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: 'Invalid request body' }),
+    };
+  }
+
+  const { server, port, from, to, username, password } = requestBody;
   console.log(`Attempting to send email from ${from} to ${to} using server ${server}:${port}`);
 
   try {
     const transporter = nodemailer.createTransport({
       host: server,
-      port: port,
+      port: parseInt(port),
       secure: port === 465,
       auth: {
         user: username,
@@ -51,7 +77,10 @@ export const handler: Handler = async (event) => {
     return {
       statusCode: 500,
       headers,
-      body: JSON.stringify({ error: error.message }),
+      body: JSON.stringify({ 
+        error: error.message,
+        details: error.toString()
+      }),
     };
   }
 }
