@@ -38,10 +38,10 @@ export const EmailTester = () => {
       from,
       to,
       username,
-      // password omitted for security
     });
 
     try {
+      // Using absolute path to ensure we hit the Netlify function
       const response = await fetch('/.netlify/functions/send-test-email', {
         method: 'POST',
         headers: {
@@ -61,18 +61,12 @@ export const EmailTester = () => {
       console.log('Email test response status:', response.status);
       
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server error response:', errorText);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const text = await response.text();
-      let data;
-      
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error('Failed to parse response as JSON:', text);
-        throw new Error('Server returned an invalid response format');
-      }
+      const data = await response.json();
 
       if (data.success) {
         toast({
