@@ -16,6 +16,9 @@ export default async function handler(req, res) {
         user: username,
         pass: password,
       },
+        logger: true,
+  debug: true
+});
     });
 
     await transporter.sendMail({
