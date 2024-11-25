@@ -33,16 +33,41 @@ export const EmailTester = () => {
 
     setIsLoading(true);
 
-    // Simulate sending test email
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const response = await fetch('/api/send-test-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          server,
+          port: parseInt(port),
+          from,
+          to,
+          username,
+          password,
+        }),
+      });
 
-    // Simulate success
-    toast({
-      title: "Test email sent",
-      description: "The test email was sent successfully",
-    });
+      const data = await response.json();
 
-    setIsLoading(false);
+      if (data.success) {
+        toast({
+          title: "Test email sent",
+          description: "The test email was sent successfully",
+        });
+      } else {
+        throw new Error(data.error || 'Failed to send email');
+      }
+    } catch (error) {
+      toast({
+        title: "Failed to send email",
+        description: error instanceof Error ? error.message : "An error occurred while sending the test email",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

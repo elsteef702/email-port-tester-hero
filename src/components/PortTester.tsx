@@ -3,13 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface PortResult {
   port: number;
@@ -26,28 +19,47 @@ export const PortTester = () => {
   const commonPorts = [25, 465, 587];
 
   const testPort = async (port: number) => {
-    // In a real application, this would make an actual connection test
-    // For demo purposes, we'll simulate the test with a timeout
     setResults(prev => [...prev, { port, status: "testing" }]);
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Simulate random success/failure
-    const success = Math.random() > 0.5;
-    
-    setResults(prev => 
-      prev.map(result => 
-        result.port === port 
-          ? { ...result, status: success ? "success" : "error" }
-          : result
-      )
-    );
+    try {
+      const response = await fetch(`/api/test-port`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ host: server, port }),
+      });
+      
+      const data = await response.json();
+      
+      setResults(prev => 
+        prev.map(result => 
+          result.port === port 
+            ? { ...result, status: data.success ? "success" : "error" }
+            : result
+        )
+      );
 
-    toast({
-      title: success ? "Port is open" : "Port is closed",
-      description: `Port ${port} ${success ? "is" : "is not"} accessible`,
-      variant: success ? "default" : "destructive",
-    });
+      toast({
+        title: data.success ? "Port is open" : "Port is closed",
+        description: `Port ${port} ${data.success ? "is" : "is not"} accessible`,
+        variant: data.success ? "default" : "destructive",
+      });
+    } catch (error) {
+      setResults(prev => 
+        prev.map(result => 
+          result.port === port 
+            ? { ...result, status: "error" }
+            : result
+        )
+      );
+
+      toast({
+        title: "Error testing port",
+        description: "Failed to test port connectivity",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleTest = async () => {
@@ -63,12 +75,10 @@ export const PortTester = () => {
     setIsLoading(true);
     setResults([]);
 
-    // Test common ports
     for (const port of commonPorts) {
       await testPort(port);
     }
 
-    // Test custom port if provided
     if (customPort) {
       await testPort(parseInt(customPort));
     }
