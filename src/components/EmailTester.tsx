@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/components/ui/use-toast";
-import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -10,36 +9,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+
+interface EmailTestForm {
+  server: string;
+  port: string;
+  from: string;
+  to: string;
+  username: string;
+  password: string;
+}
+
+const initialFormState: EmailTestForm = {
+  server: "",
+  port: "",
+  from: "",
+  to: "",
+  username: "",
+  password: "",
+};
 
 export const EmailTester = () => {
-  const [server, setServer] = useState("");
-  const [port, setPort] = useState("");
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState<EmailTestForm>(initialFormState);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+
+  const handleInputChange = (field: keyof EmailTestForm, value: string) => {
+    setForm(prev => ({ ...prev, [field]: value }));
+  };
+
+  const validateForm = () => {
+    const requiredFields = Object.entries(form);
+    const emptyFields = requiredFields.filter(([_, value]) => !value);
+    
+    if (emptyFields.length > 0) {
+      toast.error("Please fill in all required fields");
+      return false;
+    }
+    return true;
+  };
 
   const handleSendTest = async () => {
-    if (!server || !port || !from || !to || !username || !password) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!validateForm()) return;
 
     setIsLoading(true);
-    console.log('Starting email test with config:', {
-      server,
-      port,
-      from,
-      to,
-      username,
-    });
-
+    
     try {
       const response = await fetch('/.netlify/functions/send-test-email', {
         method: 'POST',
@@ -47,49 +60,30 @@ export const EmailTester = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          server,
-          port: parseInt(port),
-          from,
-          to,
-          username,
-          password,
+          ...form,
+          port: parseInt(form.port),
         }),
       });
 
-      const contentType = response.headers.get("content-type");
-      const responseText = await response.text();
-      
-      let data;
-      try {
-        // Only try to parse as JSON if the content type is application/json
-        if (contentType?.includes('application/json')) {
-          data = JSON.parse(responseText);
-        } else {
-          throw new Error('Server returned non-JSON response');
-        }
-      } catch (error) {
-        console.error('Response parsing error:', error);
-        console.error('Raw response:', responseText);
-        throw new Error(
-          'Failed to process server response. Please check the server logs for more details.'
-        );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      const contentType = response.headers.get("content-type");
+      if (!contentType?.includes('application/json')) {
+        throw new Error('Server returned non-JSON response');
+      }
+
+      const data = await response.json();
+
       if (data.success) {
-        toast({
-          title: "Test email sent",
-          description: "The test email was sent successfully",
-        });
+        toast.success("Test email sent successfully");
       } else {
         throw new Error(data.error || 'Failed to send email');
       }
     } catch (error) {
       console.error('Email test error:', error);
-      toast({
-        title: "Failed to send email",
-        description: error instanceof Error ? error.message : "An error occurred while sending the test email",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Failed to send test email");
     } finally {
       setIsLoading(false);
     }
@@ -97,19 +91,19 @@ export const EmailTester = () => {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Server Address</label>
           <Input
             placeholder="smtp.gmail.com"
-            value={server}
-            onChange={(e) => setServer(e.target.value)}
+            value={form.server}
+            onChange={(e) => handleInputChange("server", e.target.value)}
           />
         </div>
 
         <div className="space-y-2">
           <label className="text-sm font-medium">Port</label>
-          <Select onValueChange={setPort}>
+          <Select onValueChange={(value) => handleInputChange("port", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select port" />
             </SelectTrigger>
@@ -126,8 +120,8 @@ export const EmailTester = () => {
           <Input
             type="email"
             placeholder="from@example.com"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
+            value={form.from}
+            onChange={(e) => handleInputChange("from", e.target.value)}
           />
         </div>
 
@@ -136,8 +130,8 @@ export const EmailTester = () => {
           <Input
             type="email"
             placeholder="to@example.com"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
+            value={form.to}
+            onChange={(e) => handleInputChange("to", e.target.value)}
           />
         </div>
 
@@ -145,8 +139,8 @@ export const EmailTester = () => {
           <label className="text-sm font-medium">Username</label>
           <Input
             placeholder="SMTP username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            value={form.username}
+            onChange={(e) => handleInputChange("username", e.target.value)}
           />
         </div>
 
@@ -155,8 +149,8 @@ export const EmailTester = () => {
           <Input
             type="password"
             placeholder="SMTP password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={form.password}
+            onChange={(e) => handleInputChange("password", e.target.value)}
           />
         </div>
       </div>
