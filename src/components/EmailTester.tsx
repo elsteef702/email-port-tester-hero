@@ -59,25 +59,13 @@ export const EmailTester = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          ...form,
-          port: parseInt(form.port),
-        }),
+        body: JSON.stringify(form),
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const contentType = response.headers.get("content-type");
-      if (!contentType?.includes('application/json')) {
-        throw new Error('Server returned non-JSON response');
-      }
 
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Test email sent successfully");
+        toast.success(data.message || "Test email sent successfully");
       } else {
         throw new Error(data.error || 'Failed to send email');
       }

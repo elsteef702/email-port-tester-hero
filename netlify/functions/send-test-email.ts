@@ -34,7 +34,6 @@ export const handler: Handler = async (event) => {
   try {
     requestBody = JSON.parse(event.body || '{}');
   } catch (error) {
-    console.error('Error parsing request body:', error);
     return {
       statusCode: 400,
       headers,
@@ -43,46 +42,44 @@ export const handler: Handler = async (event) => {
   }
 
   const { server, port, from, to, username, password } = requestBody;
-  console.log(`Attempting to send email from ${from} to ${to} using server ${server}:${port}`);
 
   try {
     const transporter = nodemailer.createTransport({
       host: server,
       port: parseInt(port),
-      secure: port === 465,
+      secure: port === '465',
       auth: {
         user: username,
         pass: password,
       },
       tls: {
-        rejectUnauthorized: false // Allow self-signed certificates
+        rejectUnauthorized: false
       }
     });
 
-    console.log('Transporter created, attempting to send email...');
     await transporter.sendMail({
-      from: from,
-      to: to,
+      from,
+      to,
       subject: 'SMTP Test Email',
       text: 'This is a test email to verify SMTP configuration.',
       html: '<p>This is a test email to verify SMTP configuration.</p>',
     });
-    console.log('Email sent successfully');
 
     return {
       statusCode: 200,
       headers,
-      body: JSON.stringify({ success: true }),
+      body: JSON.stringify({ success: true, message: 'Email sent successfully' }),
     };
   } catch (error) {
-    console.error('Error sending email:', error);
+    console.error('Email sending error:', error);
     return {
       statusCode: 500,
       headers,
       body: JSON.stringify({ 
-        error: error.message,
+        success: false,
+        error: error.message || 'Failed to send email',
         details: error.toString()
       }),
     };
   }
-}
+};
