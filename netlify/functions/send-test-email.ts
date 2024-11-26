@@ -1,26 +1,22 @@
 import { Handler } from '@netlify/functions';
 import nodemailer from 'nodemailer';
 
+const headers = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Content-Type': 'application/json'
+};
+
 export const handler: Handler = async (event) => {
   // Handle CORS preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: ''
     };
   }
-
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Content-Type': 'application/json'
-  };
 
   if (event.httpMethod !== 'POST') {
     return {
@@ -42,6 +38,14 @@ export const handler: Handler = async (event) => {
   }
 
   const { server, port, from, to, username, password } = requestBody;
+
+  if (!server || !port || !from || !to || !username || !password) {
+    return {
+      statusCode: 400,
+      headers,
+      body: JSON.stringify({ error: 'Missing required fields' }),
+    };
+  }
 
   try {
     const transporter = nodemailer.createTransport({
