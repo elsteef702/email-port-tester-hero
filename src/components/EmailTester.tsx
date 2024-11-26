@@ -70,26 +70,31 @@ export const EmailTester = () => {
       });
 
       const responseText = await response.text();
-      let data;
       
+      // Try to parse as JSON first
       try {
-        data = JSON.parse(responseText);
+        const data = JSON.parse(responseText);
         if (data.success) {
           toast.success(data.message || "Test email sent successfully");
         } else {
-          throw new Error(data.error || 'Failed to send email');
+          setErrorDialog({
+            open: true,
+            content: data.error || 'Failed to send email'
+          });
         }
       } catch (parseError) {
-        // If we can't parse the response as JSON, show the raw response
+        // If parsing fails, show the raw response
         setErrorDialog({
           open: true,
           content: responseText
         });
-        throw new Error("Server returned non-JSON response");
       }
     } catch (error) {
       console.error('Email test error:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to send test email");
+      setErrorDialog({
+        open: true,
+        content: error instanceof Error ? error.message : "Failed to send test email"
+      });
     } finally {
       setIsLoading(false);
     }
